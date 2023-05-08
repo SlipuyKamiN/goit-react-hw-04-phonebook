@@ -4,29 +4,42 @@ import {
   FormInput,
   FormInputLabel,
   SubmitButton,
+  ErrMessage,
 } from './Form.styled';
 import { nanoid } from 'nanoid';
 import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 
 export const ContactForm = ({ onSubmit }) => {
-  const { register, handleSubmit, reset } = useForm();
-
   const nameID = nanoid();
   const numberID = nanoid();
 
-  const validation = {
-    name: {
-      required: true,
-      minLength: 4,
-      pattern: "^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$",
-    },
-    number: {
-      required: true,
-      minLength: 7,
-      maxLength: 10,
-      pattern: '^[+]?[(]?[0-9]{1,4}[)]?[-s.]?[0-9]{1,4}[-s.]?[0-9]{1,6}$',
-    },
-  };
+  const validationSchema = yup.object().shape({
+    name: yup
+      .string()
+      .matches(
+        "^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$",
+        "Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
+      )
+      .required(),
+    number: yup
+      .string()
+      .matches(
+        '^[+]?[(]?[0-9]{1,4}[)]?[-s.]?[0-9]{1,4}[-s.]?[0-9]{1,6}$',
+        'Phone number must be digits and can contain spaces, dashes, parentheses and can start with +'
+      )
+      .required(),
+  });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(validationSchema),
+  });
 
   const handleFormSubmit = data => {
     onSubmit(data);
@@ -36,21 +49,11 @@ export const ContactForm = ({ onSubmit }) => {
   return (
     <AppForm autoComplete="off" onSubmit={handleSubmit(handleFormSubmit)}>
       <FormInputLabel htmlFor={nameID}>Name</FormInputLabel>
-      <FormInput
-        type="text"
-        {...register('name', validation.name)}
-        id={nameID}
-      />
-      {/* <ErrMessage name="name" component="div" /> */}
-
+      <FormInput type="text" {...register('name')} id={nameID} />
+      {errors.name && <ErrMessage>{errors.name.message}</ErrMessage>}
       <FormInputLabel htmlFor={numberID}>Number</FormInputLabel>
-      <FormInput
-        type="text"
-        {...register('number', validation.number)}
-        id={numberID}
-      />
-      {/* <ErrMessage name="number" component="div" /> */}
-
+      <FormInput type="text" {...register('number')} id={numberID} />
+      {errors.number && <ErrMessage>{errors.number.message}</ErrMessage>}
       <SubmitButton type="submit">Submit</SubmitButton>
     </AppForm>
   );
